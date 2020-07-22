@@ -1,0 +1,12 @@
+[Unit]
+Description=BLE Homie bridge service
+After=bluetooth.target
+
+[Service]
+Type=simple
+WorkingDirectory=/home/pi/bin/bleBridge/
+ExecStart=/home/pi/bin/bleBridge/main.py
+Restart=always
+
+[Install]
+WantedBy=multi-user.target
