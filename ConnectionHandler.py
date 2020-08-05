@@ -74,6 +74,7 @@ class ConnectionHandler:
                             print('failed connecting to ' + device['address'] + ', attempt ' + str(i))
                             if i == 9:
                                 print('whatever, resetting saved value')
+                                device['value'] = None
                     device['connecting'] = False
 
                 try:
@@ -82,9 +83,10 @@ class ConnectionHandler:
                         print('writing queued value')
                         value['characteristic'].write(value['value'], withResponse=True)
                         device['value'] = None
-                    continue
                 except KeyError:
                     pass
+                except bt.BTLEDisconnectError:
+                    print("device disconnected")
 
             self.reconnect_condition.acquire()
             self.reconnect_condition.wait(1)
