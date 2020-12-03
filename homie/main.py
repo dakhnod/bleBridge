@@ -233,9 +233,9 @@ class Device(object):
             self.statsInterval, self.publishUptime, name="uptimeTimer")
         self.signalTimer = self.Timer(
             self.statsInterval, self.publishSignal, name="signalTimer")
-        self.intervalTimer.start()
-        self.uptimeTimer.start()
-        self.signalTimer.start()
+        # self.intervalTimer.start()
+        # self.uptimeTimer.start()
+        # self.signalTimer.start()
 
     def setFirmware(self, name, version):
         """docstring for setFirmware"""

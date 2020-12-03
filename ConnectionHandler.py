@@ -30,7 +30,7 @@ class ConnectionHandler:
                 try:
                     device['name'] = target['name']
                 except KeyError:
-                    device['name'] = None
+                    device['name'] = 'Unknown'
 
                 self.devices.append(device)
 
@@ -45,48 +45,54 @@ class ConnectionHandler:
     def loop_reconnects(self):
         while True:
             for device in self.devices:
-                status = device['device'].getState()
-
-                if device['connecting']:
-                    print('device ' + device['address'] + ' already connecting')
-                    continue
-
-                if status != 'conn':
-                    has_value = False
+                try:
                     try:
-                        has_value = device['value'] is not None
-                    except KeyError:
-                        pass
+                        status = device['device'].getState()
+                    except:
+                        status = None
 
-                    if not has_value and not device['auto_reconnect']:
-                        continue
-
-                    device['connecting'] = True
-
-                    for i in range(10):
-                        print('connecting to ' + device['address'])
+                    if status != 'conn':
+                        has_value = False
                         try:
+                            has_value = device['value'] is not None
+                        except KeyError:
+                            pass
+
+                        if not has_value and not device['auto_reconnect']:
+                            continue
+
+                        if device['next_connect'] > time.time():
+                            continue
+
+                        print('connecting to %s %s' % (device['address'], device['name']))
+                        try:
+                            # raise bt.BTLEDisconnectError("test")
                             dev = device['device']
                             dev.connect(dev.addr, device['address_type'])
-                            print('connected to ' + device['address'])
-                            break
+                            print('connected to %s %s' % (device['address'], device['name']))
                         except bt.BTLEDisconnectError:
-                            print('failed connecting to ' + device['address'] + ', attempt ' + str(i))
-                            if i == 9:
-                                print('whatever, resetting saved value')
-                                device['value'] = None
-                    device['connecting'] = False
+                            print('failed connecting to %s %s' % (device['address'], device['name']))
+                            last_pause = device['last_pause']
+                            last_pause = min(60, last_pause + 1)
+                            print('setting device pause to %i' % last_pause)
+                            device['next_connect'] = time.time() + last_pause
+                            device['last_pause'] = last_pause
+                            continue
 
-                try:
-                    value = device['value']
-                    if device['value'] is not None:
-                        print('writing queued value')
-                        value['characteristic'].write(value['value'], withResponse=True)
-                        device['value'] = None
-                except KeyError:
-                    pass
-                except bt.BTLEDisconnectError:
-                    print("device disconnected")
+                    try:
+                        value = device['value']
+                        if device['value'] is not None:
+                            print('writing queued value')
+                            # raise bt.BTLEDisconnectError("test")
+                            value['characteristic'].write(value['value'], withResponse=True)
+                            device['value'] = None
+                    except KeyError:
+                        pass
+                    except bt.BTLEDisconnectError:
+                        print('failed write to %s %s' % (device['address'], device['name']))
+                        device['device'].disconnect()
+                except:
+                    print("device %s raised exception" % device['address'])
 
             self.reconnect_condition.acquire()
             self.reconnect_condition.wait(1)
@@ -106,9 +112,9 @@ class ConnectionHandler:
         connection_tries = 20
         while True:
             try:
-                print("connecting to ", address)
+                print('connecting to %s' % (address))
                 device = bt.Peripheral(address, addrType=address_type)
-                print("connected to ", address)
+                print("connected to %s" % (address))
                 device.getState()
                 services = device.getServices()
                 services_map = {}
@@ -132,8 +138,9 @@ class ConnectionHandler:
                     'address': device.addr,
                     'address_type': address_type,
                     'device': device,
-                    'connecting': False,
-                    'services': services_map
+                    'services': services_map,
+                    'next_connect': 0,
+                    'last_pause': 0
                 }
                 return device
             except bt.BTLEDisconnectError:

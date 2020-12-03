@@ -3,7 +3,7 @@ import homie
 class HomieHandler:
     def handle_device_discovery(self, ble_device, connection_manager):
         device = homie.Device({
-            'HOST': '192.168.0.4',
+            'HOST': 'home',
             'DEVICE_ID': 'ble-' + ble_device['address'].replace(':', '').lower(),
             'DEVICE_NAME': ble_device['name'] if ble_device['name'] is not None else 'BLE ' + ble_device['address'],
             'TOPIC': 'homie_ble',
