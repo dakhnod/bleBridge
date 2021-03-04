@@ -88,7 +88,7 @@ class ConnectionHandler:
                             device['value'] = None
                     except KeyError:
                         pass
-                    except bt.BTLEDisconnectError:
+                    except:
                         print('failed write to %s %s' % (device['address'], device['name']))
                         device['device'].disconnect()
                 except:
