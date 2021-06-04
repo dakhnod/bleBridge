@@ -23,6 +23,8 @@ class ConnectionHandler:
                 device['auto_reconnect'] = target.get('auto_reconnect', False)
                 device['name'] = target.get('name', 'Unkown')
 
+                print('adding device %s (%s) to addressable devices' % (device['address'], device['name']))
+
                 self.devices.append(device)
 
                 if discover_callback is not None:
