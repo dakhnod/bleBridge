@@ -15,29 +15,20 @@ class ConnectionHandler:
         for target in targets:
             try:
                 address_type = bt.ADDR_TYPE_PUBLIC
-                try:
-                    if target['address_type'] == 'random':
-                        address_type = bt.ADDR_TYPE_RANDOM
-                except KeyError:
-                    pass
+                if target.get('address_type', 'public') == 'random':
+                    address_type = bt.ADDR_TYPE_RANDOM
 
                 device = self.connect_discover_device(target['address'], address_type)
-                try:
-                    device['auto_reconnect'] = target['auto_reconnect']
-                except KeyError:
-                    device['auto_reconnect'] = False
 
-                try:
-                    device['name'] = target['name']
-                except KeyError:
-                    device['name'] = 'Unknown'
+                device['auto_reconnect'] = target.get('auto_reconnect', False)
+                device['name'] = target.get('name', 'Unkown')
 
                 self.devices.append(device)
 
                 if discover_callback is not None:
                     discover_callback(device)
             except bt.BTLEDisconnectError:
-                print('skipping device' + target['address'])
+                print('skipping device %s (%s)' % (target['address'], target.get('name', 'Unknown')))
 
     def start_loop(self):
         threading.Thread(target=self.loop_reconnects).start()
@@ -69,9 +60,9 @@ class ConnectionHandler:
                             # raise bt.BTLEDisconnectError("test")
                             dev = device['device']
                             dev.connect(dev.addr, device['address_type'])
-                            print('connected to %s %s' % (device['address'], device['name']))
+                            print('connected to %s (%s)' % (device['address'], device['name']))
                         except bt.BTLEDisconnectError:
-                            print('failed connecting to %s %s' % (device['address'], device['name']))
+                            print('failed connecting to %s (%s)' % (device['address'], device['name']))
                             last_pause = device['last_pause']
                             last_pause = min(60, last_pause + 1)
                             print('setting device pause to %i' % last_pause)
@@ -89,17 +80,17 @@ class ConnectionHandler:
                     except KeyError:
                         pass
                     except:
-                        print('failed write to %s %s' % (device['address'], device['name']))
+                        print('failed write to %s (%s)' % (device['address'], device['name']))
                         device['device'].disconnect()
                 except:
-                    print("device %s raised exception" % device['address'])
+                    print("device %s (%s) raised exception" % (device['address'], device['name']))
 
             self.reconnect_condition.acquire()
             self.reconnect_condition.wait(1)
 
     def write_value(self, device, characteristic, value):
         with self.write_mutex:
-            print('queueing value to ' + device['address'])
+            print('queueing value to %s (%s)' % (device['address'], device['name']))
             device['value'] = {
                 'characteristic': characteristic,
                 'value': value
