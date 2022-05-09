@@ -7,7 +7,7 @@ class HomieHandler:
             'HOST': '192.168.1.1',
             'DEVICE_ID': 'ble-' + ble_device['address'].replace(':', '').lower(),
             'DEVICE_NAME': ble_device['name'] if ble_device['name'] is not None else 'BLE ' + ble_device['address'],
-            'TOPIC': 'homie_ble',
+            'TOPIC': 'homie/ble',
             'QOS': 0
         })
         for serviceUUID in ble_device['services']:
